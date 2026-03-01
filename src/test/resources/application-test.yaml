@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: streaming-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+azure:
+  storage:
+    connection-string: DefaultEndpointsProtocol=https;AccountName=test;AccountKey=test;EndpointSuffix=core.windows.net
+    container-name: test-videos
+
+eureka:
+  client:
+    enabled: false

@@ -1,0 +1,69 @@
+server:
+  port: ${PORT:9093}
+  servlet:
+    context-path: ${CONTEXT_PATH:/}
+
+spring:
+  application:
+    name: streaming-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+azure:
+  storage:
+    connection-string: ${AZURE_STORAGE_CONNECTION_STRING}
+    container-name: ${AZURE_STORAGE_CONTAINER_NAME:videos}
+
+microservices:
+  urls:
+    api-gateway: ${API_GATEWAY_URL:http://localhost:9090}
+    user-service: ${USER_SERVICE_URL:http://localhost:9091}
+    core-service: ${CORE_SERVICE_URL:http://localhost:9092}
+    streaming-service: ${STREAMING_SERVICE_URL:http://localhost:9093}
+    messaging-service: ${MESSAGING_SERVICE_URL:http://localhost:9094}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+    healthcheck:
+      enabled: true
+  instance:
+    hostname: localhost
+    prefer-ip-address: false
+    non-secure-port: 9093
+    secure-port-enabled: false
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+    info:
+      enabled: true
+  info:
+    env:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+info:
+  app:
+    name: ${spring.application.name}
+    description: DataRango Video Streaming Service
+    version: 1.0.0
+    encoding: UTF-8
+    java:
+      version: ${java.version}
