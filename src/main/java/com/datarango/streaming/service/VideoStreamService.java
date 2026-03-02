@@ -10,8 +10,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.UUID;
 
 @Service
 public class VideoStreamService {
@@ -53,6 +56,34 @@ public class VideoStreamService {
         }
 
         return azureBlobService.generateSasUrl(blobName, SAS_TOKEN_EXPIRY_MINUTES);
+    }
+
+    public VideoStreamInfoDto uploadVideo(MultipartFile file) throws IOException {
+        String originalFilename = file.getOriginalFilename();
+        String extension = ".mp4";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+
+        String videoId = UUID.randomUUID().toString();
+        String blobName = "videos/" + videoId + extension;
+
+        String contentType = file.getContentType();
+        if (contentType == null || contentType.isEmpty()) {
+            contentType = "video/mp4";
+        }
+
+        azureBlobService.uploadBlob(blobName, file.getInputStream(), file.getSize(), contentType);
+
+        logger.info("Video uploaded successfully: {}", blobName);
+
+        return VideoStreamInfoDto.builder()
+                .videoId(videoId)
+                .fileName(originalFilename)
+                .contentType(contentType)
+                .fileSize(file.getSize())
+                .streamUrl("/api/videos/" + videoId + "/stream")
+                .build();
     }
 
     public ResponseEntity<Resource> streamVideo(String videoId, String rangeHeader) {
