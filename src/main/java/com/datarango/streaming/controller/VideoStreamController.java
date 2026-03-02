@@ -13,6 +13,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -95,6 +96,38 @@ public class VideoStreamController {
             logger.error("Error generating signed URL: {}", videoId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to generate signed URL"));
+        }
+    }
+
+    @PostMapping("/upload")
+    @Operation(summary = "Upload video", description = "Upload a video file to Azure Blob Storage")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Video uploaded successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid file or empty file"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Upload failed")
+    })
+    public ResponseEntity<ApiResponse<VideoStreamInfoDto>> uploadVideo(
+            @Parameter(description = "Video file to upload") @RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("File is empty"));
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("video/")) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("File must be a video"));
+        }
+
+        try {
+            VideoStreamInfoDto videoInfo = videoStreamService.uploadVideo(file);
+            logger.info("Video uploaded: {}", videoInfo.getVideoId());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success(videoInfo));
+        } catch (Exception e) {
+            logger.error("Error uploading video: {}", file.getOriginalFilename(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to upload video"));
         }
     }
 }

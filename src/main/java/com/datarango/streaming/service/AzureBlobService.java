@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.OffsetDateTime;
 
@@ -110,5 +112,19 @@ public class AzureBlobService {
 
         String sasToken = blobClient.generateSas(sasValues);
         return blobClient.getBlobUrl() + "?" + sasToken;
+    }
+
+    public String uploadBlob(String blobName, InputStream inputStream, long contentLength, String contentType) throws IOException {
+        BlobClient blobClient = getBlobClient(blobName);
+
+        blobClient.upload(inputStream, contentLength, true);
+
+        if (contentType != null && !contentType.isEmpty()) {
+            blobClient.setHttpHeaders(new com.azure.storage.blob.models.BlobHttpHeaders()
+                    .setContentType(contentType));
+        }
+
+        logger.info("Uploaded blob: {}, size: {}, contentType: {}", blobName, contentLength, contentType);
+        return blobClient.getBlobUrl();
     }
 }
